@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>PluginName</key>
+    <string>Check CloudBerry Backup</string>
+    <key>PluginUUID</key>
+    <string>61E10FCC-9CFF-4DEE-B8FD-58F38CB2F475</string>
+    <key>PluginOptions</key>
+    <array>
+        <dict>
+            <key>SettingStorageKey</key>
+            <string>should_alert_install</string>
+            <key>SettingStoragePath</key>
+            <string>/Library/MonitoringClient/PluginSupport/_check_cloudberry_backup.plist</string>
+            <key>SettingTitle</key>
+            <string>Alert if not installed</string>
+            <key>SettingTitleHint</key>
+            <string>Alert if CloudBerry Backup is not installed.</string>
+            <key>SettingType</key>
+            <dict>
+                <key>Type</key>
+                <string>Checkbox</string>
+                <key>Value</key>
+                <string>Positive</string>
+            </dict>
+        </dict>
+        <dict>
+            <key>SettingStorageKey</key>
+            <string>backup_warning</string>
+            <key>SettingStoragePath</key>
+            <string>/Library/MonitoringClient/PluginSupport/_check_cloudberry_backup.plist</string>
+            <key>SettingTitle</key>
+            <string>Days until warning</string>
+            <key>SettingTitleHint</key>
+            <string>How many days since last backup before Watchman should send a warning.</string>
+            <key>SettingType</key>
+            <dict>
+                <key>Type</key>
+                <string>NumberPicker</string>
+                <key>Value</key>
+                <string>1-365</string>
+            </dict>
+        </dict>
+        <dict>
+            <key>SettingStorageKey</key>
+            <string>backup_alert</string>
+            <key>SettingStoragePath</key> 
+            <string>/Library/MonitoringClient/PluginSupport/_check_cloudberry_backup.plist</string>
+            <key>SettingTitle</key>
+            <string>Days until alerting</string>
+            <key>SettingTitleHint</key>
+            <string>How many days since last backup before Watchman should send an alert.</string>
+            <key>SettingType</key>
+            <dict>
+                <key>Type</key>
+                <string>NumberPicker</string>
+                <key>Value</key>
+                <string>1-365</string>
+            </dict>
+        </dict>
+    </array>
+    <key>PluginVersion</key>
+    <string>1.0</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Library/MonitoringClient/Plugins/_check_cloudberry_backup.plugin</string>
+    </array>
+</dict>
+</plist>

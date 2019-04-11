@@ -1,0 +1,193 @@
+#!/usr/bin/python
+import os
+import sys
+import time
+import sqlite3
+import calendar
+import datetime
+from PluginToolkit import writePlist
+from PluginToolkit import check_settings
+from xml.etree import ElementTree as et
+
+# read watchman preferences
+settings_plist = '/Library/MonitoringClient/PluginSupport/_check_cloudberry_backup.plist'
+base_settings = { # default settings
+	'should_alert_install' : True, # if true, send alert if CBB not installed
+    'backup_warning' : 3, # days until backup warning
+    'backup_alert' : 7, # days until backup alert
+    'PrefPaneVisibility' : True, # show the pref pane, doesn't seem to work...
+}
+settings = check_settings(base_settings, settings_plist)
+writePlist(settings, settings_plist)
+
+
+# convert days to seconds. 1 day == 86400 seconds
+backup_warning_sec = settings['backup_warning'] * 86400
+backup_alert_sec = settings['backup_alert'] * 86400
+
+
+def check_install():
+    # check if CloudBerry Backup isn't installed
+    if os.path.exists('/Applications/CloudBerry Backup.app'):
+        # CBB is installed.
+        return(True)
+    else:
+        # CBB isn't installed
+        print("CloudBerry Backup isn't installed.")
+        return(False)
+
+def check_license():
+    cbb_license = '/opt/local/CloudBerry Backup/config/.License'
+    # cbb_license = '/Users/bryanh/Desktop/test_license.txt' # fake license
+    if not os.path.exists(cbb_license):
+        # CBB license file doesn't even exist. so, it can't be licensed.
+        print("CloudBerry Backup not licensed")
+        return(False)
+    else:
+        # license file is an XML doc, parse it for the key.
+        # if not licensed, it's an empty file.
+        key = None
+        try:
+            # parse XML for the LicenseKey key
+            tree = et.parse(cbb_license)
+            key = tree.find('LicenseKey').text
+        except et.ParseError:
+            # we'll get an error if the file is empty- aka not licensed.
+            pass
+        
+        if key == None:
+            # couldn't retrieve a license key.
+            print("CloudBerry Backup not licensed.")
+            return(False)
+        else:
+            # CBB is licensed
+            return(True)
+
+def check_last_backup():
+    # the most accurate way to get the backup time will be to get the last
+    # backed up item in the history table, look at it's session ID, match that
+    # to the correct session in the session_history table, and then pull the
+    # date_start_utc value for the session row.
+    
+    db_path = '/opt/local/CloudBerry Backup/config/cbbackup.db'
+    if not os.path.exists(db_path):
+        # check if the DB path even exists.
+        print("CloudBerry Backup DB doesn't exist. Can't check last backup.")
+        return('alert')
+    
+    try:
+        # connect to the DB
+        db = sqlite3.connect(db_path)
+    except:
+        # alert if this connection fails
+        print("Cloudn't open CloudBerry Backup DB.")
+        return('alert')
+    
+    # get the last item in the history that matches the backup operation (0) (1 is restore)
+    session_id_obj = db.execute(
+        "select session_id from history where operation == 0 order by id desc;"
+    )
+    
+    # attempt to fetch the session ID from the last backed up object
+    try:
+        # fetch the session ID from the sql object
+        session_id = session_id_obj.fetchone()[0]
+    except TypeError:
+        # if this get's called, then there doesn't appear to be any backups
+        # in the history table. instead we'll check that there's only one
+        # session. If there's only 1 session then this script will assume that
+        # backups have never been run on this machine.
+        
+        # get the entire session_history table
+        session_history = db.execute(
+            "select * from session_history;"
+        )
+        # fetch the whole table out of the sql object and into an array
+        sh = session_history.fetchall()
+        db.close()
+        
+        if len(sh) == 1:
+            # there's only one item in the session_history table. i'm going to
+            # assume that means CBB has never backed up before.
+            print("CloudBerry Backup hasn't run before.")
+            return('warn')
+        else:
+            # something else is going on and CBB should be checked.
+            print("Couldn't get session ID from DB.")
+            return('alert')
+    
+    # get's the date_start_utc value from the session ID in the session_history table
+    session_start_obj = db.execute(
+        "select date_start_utc from session_history where id is {0};" \
+        .format(session_id)
+    )
+    try:
+        # fetch the session start time from the sql object
+        session_start = str(session_start_obj.fetchone()[0])
+    except:
+        print("Couldn't get session start time from DB.")
+        db.close()
+        return('alert')
+    
+    db.close()
+    
+    # convert session_start time into UTC epoch time.
+    backup_date = datetime.datetime.strptime(session_start, '%Y%m%d%H%M%S')
+    backup_epoch_utc = calendar.timegm(backup_date.timetuple())
+    # convert epoch time to a local date/time string
+    backup_date_local = datetime.datetime.fromtimestamp(backup_epoch_utc) \
+        .strftime('%Y-%m-%d %H:%M:%S')
+    
+    # get current epoch time
+    current_epoch_time = int(time.time())
+    # get the seconds between now and the last backup session
+    seconds_since_backup = current_epoch_time - backup_epoch_utc
+    
+    # if the seconds since backup are longer than the alert time, alert
+    if seconds_since_backup > backup_alert_sec:
+        print(
+            "ALERT: last backup is older than {0} days. Last known backup: {1}" \
+            .format(settings['backup_alert'], backup_date_local)
+        )
+        return('alert')
+    
+    # if the seconds since backup are longer than the warn time, warn
+    if seconds_since_backup > backup_warning_sec:
+        print(
+            "WARNING: last backup is older than {0} days. Last known backup: {1}" \
+            .format(settings['backup_warning'], backup_date_local)
+        )
+        return('warn')
+    
+    # if this runs, then the backups are within the warning and alert threshold
+    print("Last backup: {0}".format(backup_date_local))
+    return('ok')
+
+
+is_installed = check_install()
+if not is_installed:
+    # CBB isn't installed check if this should throw an error or not
+    if settings['should_alert_install']:
+        # should alert that CBB isn't installed
+        sys.exit(2)
+    else:
+        # don't alert, this script didn't see anything <(<_<<) (>>_>)> ^(^_^)^ ~(o.o)~
+        sys.exit(25)
+
+is_licensed = check_license()
+backup_status = check_last_backup()
+
+if backup_status == 'alert':
+    # backup status wants us to alert
+    sys.exit(2)
+elif backup_status == 'warn':
+    # backup status wants us to warn
+    sys.exit(20)
+else:
+    # backup status is okay. so, let's check the license
+    if not is_licensed:
+        # CBB isn't licensed, send an alert
+        sys.exit(2)
+    else:
+        # CBB is licensed, everything looks solid!
+        sys.exit(0)
