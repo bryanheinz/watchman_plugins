@@ -1,0 +1,65 @@
+#!/usr/bin/python
+import os
+import sys
+import sqlite3
+import subprocess
+from datetime import datetime
+
+
+# exit if Cloud Station Backup isn't installed
+if not os.path.isdir('/Applications/Synology Cloud Station Backup.app'):
+    print("Synoloy Cloud Station Backup isn't installed.")
+    sys.exit(0)
+
+
+# get the current logged in user
+usr_cmd = ['/usr/bin/stat', '-f', '"%Su"', '/dev/console']
+user = subprocess.Popen(usr_cmd, stdout=subprocess.PIPE)
+user = user.stdout.read().strip()
+user = user.replace('"', '')
+
+
+# file backup history DB path
+db_path = '/Users/{0}/.CloudStationBackup/data/db/history.sqlite'.format(user)
+
+# attempt to open the DB
+try:
+    db = sqlite3.connect(db_path)
+except:
+    # exit with an error if the plugin can't open the DB
+    print("Couldn't open history.sqlite")
+    db.close()
+    sys.exit(2)
+
+# get the last backed up file time
+time_obj = db.execute("select update_time from history_table order by id desc limit 1,1;")
+
+# extract the backup time
+try:
+    epoch_time = time_obj.fetchone()[0]
+except:
+    # exit with an error if we fail to get the time
+    print("Failed to get history epoch time.")
+    db.close()
+    sys.exit(2)
+
+# get the difference between now and the last backup time
+time_diff = datetime.now() - datetime.fromtimestamp(epoch_time)
+# convert the last backup time into a string
+last_backup = datetime.fromtimestamp(epoch_time).strftime('%Y-%m-%d %H:%M:%S %p')
+
+# if the last backup is older than 7 days, send an email alert
+if time_diff.days >= 7:
+    print("Last backup is older than 7 days.")
+    db.close()
+    sys.exit(2)
+# if the backup is older than 3 days, take note
+elif time_diff.days >= 3:
+    print("Last backup is older than 3 days: {0}".format(last_backup))
+    db.close()
+    sys.exit(20)
+
+# everything looks good, backup is fresh
+print("Last backup: {0}".format(last_backup))
+db.close()
+sys.exit(0)

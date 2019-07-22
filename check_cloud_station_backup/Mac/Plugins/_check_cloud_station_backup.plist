@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PluginName</key>
+	<string>Cloud Station Backup</string>
+	<key>PluginUUID</key>
+	<string>60684E7F-9078-4FC0-A58E-D4D1FE65F7CD</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>_check_cloud_station_backup.plugin</string>
+	</array>
+</dict>
+</plist>
