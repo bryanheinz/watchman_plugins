@@ -61,7 +61,7 @@
         </dict>
     </array>
     <key>PluginVersion</key>
-    <string>1.0</string>
+    <string>1.4.1</string>
     <key>ProgramArguments</key>
     <array>
         <string>/Library/MonitoringClient/Plugins/_check_cloudberry_backup.plugin</string>
