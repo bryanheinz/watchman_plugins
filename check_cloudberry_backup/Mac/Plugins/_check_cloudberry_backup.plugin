@@ -21,7 +21,18 @@ except ImportError:
 
 
 # CloudBerry Backup root config folder
-cbb_root = '/Library/Application Support/Online Backup/00000000-0000-0000-0000-000000000000/'
+# cbb_root = '/Library/Application Support/Online Backup/00000000-0000-0000-0000-000000000000/'
+# _Turns out_ that not all CBB config folders are all zeros. It appears that MSP
+# installers actually have a UUID for the folder. These next few lines fix the
+# assumption that the config folder will be all zeros. However, it still assumes
+# that there is only one config folder and grabs the first folder returned from
+# the ls. If there's ever a problem with multiple config folders, the code will
+# need to be refactored to support either looping through and reporting on each
+# config, or add a WM setting to specify which config folder to use.
+cbb_root = '/Library/Application Support/Online Backup/'
+cbb_config_dirs = os.listdir(cbb_root)
+if len(cbb_config_dirs) > 0:
+    cbb_root = os.path.join(cbb_root, cbb_config_dirs[0])
 # CloudBerry ~v2.10 uses a new config path, this checks if that path exists.
 # if the path doesn't exist, assume that it's the old v2.8 path.
 if not os.path.exists(cbb_root):
