@@ -47,7 +47,7 @@ if not os.path.exists(cbb_root):
 # read watchman preferences
 settings_plist = '/Library/MonitoringClient/PluginSupport/_check_cloudberry_backup.plist'
 base_settings = { # default settings
-	'should_alert_install' : True, # if true, send alert if CBB not installed
+    'should_alert_install' : True, # if true, send alert if CBB not installed
     'backup_warning' : 3, # days until backup warning
     'backup_alert' : 7, # days until backup alert
     'PrefPaneVisibility' : True, # show the pref pane, doesn't seem to work...
@@ -156,9 +156,17 @@ def check_last_backup():
     # loop through sessions checking if it's a backup plan and if it was successful
     for session in session_history:
         # get the plan type for this sessions's plan_id
-        plan_type = db.execute(
-            "select type from plan_name where plan_id = '{0}';".format(session[1])
-        ).fetchone()[0]
+        try:
+            plan_type = db.execute(
+                "select type from plan_name where plan_id = '{0}';".format(session[1])
+            ).fetchone()[0]
+        except TypeError:
+            # the log didn't return a plan type
+            if plan_type == None:
+                continue
+        except Exception as e:
+            print("Unaccounted error getting session type. Please review.\n{}" \
+                .format(e))
         # backup plan is type 1, restore is type 2.
         if plan_type == 1:
             # this session appears to be a backup session
@@ -176,6 +184,11 @@ def check_last_backup():
     
     if last_backup_session == "":
         print("Couldn't find a backup session. It doesn't appear that CloudBerry Backup has run before on this machine.")
+        return("warn")
+    
+    # check if there has ever been a successful backup session
+    if last_successful_session == "":
+        print("No successful backup sessions have ever run.")
         return("warn")
     
     # get last successful start time as a string
