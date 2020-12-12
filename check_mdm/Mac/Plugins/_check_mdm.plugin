@@ -84,6 +84,7 @@ def check_uamdm():
         return(False)
 
 def parse_profile_data(plist):
+    # long loop through the system_profile plist to find the MDM vendor name
     for i in plist:
         items = i.get('_items')
         if items:
@@ -99,20 +100,13 @@ def parse_profile_data(plist):
                                     return(mdm_vendor)
 
 def get_vendor_name(iv):
+    # parse the last bit of the system_profile plist for the MDM vendor name
     iv_item = iv.get('_name')
     if iv_item == 'com.apple.mdm':
         mdm_vendor = iv.get('spconfigprofile_organization')
         if mdm_vendor:
             return(mdm_vendor.strip())
 
-
-# get list of profiles
-# out, err = termy([
-#     '/usr/bin/profiles', '-C', '-v'
-# ])
-# 
-# # break lines into a list
-# data = out.split('\n')
 
 #
 # this new method parses the very deep output from
@@ -134,63 +128,6 @@ out, err = termy([
 
 plist = readPlistFromString(out)
 mdm_vendor = parse_profile_data(plist)
-
-
-#
-# this new method for finding the MDM vendor name iterates twice over the data
-# with only three assumptions: the MDM profile will have a 'com.apple.mdm' type,
-# the MDM vendor name is on the 'attribute: organization:' line, and that there
-# is only one 'attribute: organization:' line.
-# it is better than the previous method which had similar assumptions, but also
-# assumed that once it saw 'com.apple.mdm' that the previous
-# 'attribute: organization:' line was the MDM vendor name, which isn't always
-# true. at least on macOS 10.15.6 and .7 these assumptions were wrong.
-#
-# iterate through the profile data to find the payload profile type 'com.apple.mdm'
-# if this isn't found, the machine isn't enrolled in MDM
-# for line in data:
-#     if 'com.apple.mdm' in line:
-#         # found an MDM profile
-#         # this grabs the '_computerlevel' profile index to match the MDM
-#         # vendors name.
-#         mdm_index = line.split(' ')[0]
-#         break
-# 
-# # re-iterate through the profile data again now that we have the MDM profile index
-# for line in data:
-#     # this lets us only work through the MDM profile by matching it's index
-#     if mdm_index in line:
-#         # the attribute org is the MDM vendor name that we're looking for
-#         if 'attribute: organization:' in line:
-#             # 
-#             mdm_vendor = line.split('attribute: organization: ')[-1].strip()
-#             break
-
-# iterate through the profile data to search for an MDM profile and vendor
-# for line in data:
-#     if 'attribute: organization:' in line:
-#         if '=' in line:
-#             # grab MDM org based on = separator
-#             org = line.split('=')[-1].strip()
-#         else:
-#             # grab MDM org based on : separator
-#             org = line.split(':')[-1].strip()
-#     if 'com.apple.mdm' in line:
-#         # found an MDM profile!
-#         mdm_installed = True
-#         mdm_vendor = org
-#         
-#         if uamdm:
-#             mdm_approval = check_uamdm()
-#             if mdm_approval:
-#                 print("MDM is installed and approved.")
-#             else:
-#                 print("MDM is installed and NOT approved.")
-#         else:
-#             # for pre-UAMDM macOS, a generic MDM is installed
-#             print("MDM is installed.")
-#         print("MDM Vendor: {0}".format(mdm_vendor))
-
 
 if mdm_vendor:
     # MDM is installed
