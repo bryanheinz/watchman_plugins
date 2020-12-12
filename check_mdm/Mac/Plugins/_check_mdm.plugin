@@ -1,11 +1,28 @@
 #!/usr/bin/python
+#
+# tested on macOS 10.12 - 11.0.1
+# tested with the following MDMs: Meraki, SimpleMDM
+#
+
 import os
 import sys
 import platform
 import subprocess
-from PluginToolkit import writePlist
-from PluginToolkit import check_settings
 from distutils.version import LooseVersion
+
+
+# workaround testing vs. production; still requires WM to be installed,
+# but allows for it to be manually run by directly calling Python.
+try:
+    from PluginToolkit import writePlist
+    from PluginToolkit import check_settings
+    from PluginToolkit import readPlistFromString
+except ImportError:
+    sys.path.append('/Library/MonitoringClient/Modules')
+    sys.path.append('/Library/MonitoringClient/Modules/Toolkit')
+    from PluginToolkit import writePlist
+    from PluginToolkit import check_settings
+    from PluginToolkit import readPlistFromString
 
 
 # read preferences to know how to alert if there's a problem
@@ -43,7 +60,7 @@ else:
 # get macOS version
 mac_os = platform.mac_ver()[0]
 # check if this machine supports UAMDM
-uamdm = LooseVersion(mac_os) >= LooseVersion('10.13.4')
+uamdm_req = LooseVersion(mac_os) >= LooseVersion('10.13.4')
 
 
 def termy(cmd):
@@ -66,57 +83,131 @@ def check_uamdm():
         # user has not approved the MDM enrollment
         return(False)
 
+def parse_profile_data(plist):
+    for i in plist:
+        items = i.get('_items')
+        if items:
+            for ii in items:
+                ii_items = ii.get('_items')
+                if ii_items:
+                    for iii in ii_items:
+                        iii_items = iii.get('_items')
+                        if iii_items:
+                            for iv in iii_items:
+                                mdm_vendor = get_vendor_name(iv)
+                                if mdm_vendor:
+                                    return(mdm_vendor)
+
+def get_vendor_name(iv):
+    iv_item = iv.get('_name')
+    if iv_item == 'com.apple.mdm':
+        mdm_vendor = iv.get('spconfigprofile_organization')
+        if mdm_vendor:
+            return(mdm_vendor.strip())
+
 
 # get list of profiles
+# out, err = termy([
+#     '/usr/bin/profiles', '-C', '-v'
+# ])
+# 
+# # break lines into a list
+# data = out.split('\n')
+
+#
+# this new method parses the very deep output from
+# `system_profiler SPConfigurationProfileDataType`. this is by far the most
+# reliable way that i've found to get the actual MDM vendor name. the previous
+# method relied on too many assumptions that ended up not being true based on
+# the MDM vendor or the macOS version. please let me know if you see any bad
+# data being output to the MDM vendor name:
+# https://github.com/bryanheinz/watchman_plugins/issues
+# if you could let me know what the MDM vendor is and send me as much data from
+# `system_profiler SPConfigurationProfileDataType` that you can stripping any
+# confidential information. that will help me track down any issues pulling the
+# vendor data for MDM's that i haven't used before.
+#
+
 out, err = termy([
-    '/usr/bin/profiles', '-C', '-v'
+    'system_profiler', 'SPConfigurationProfileDataType', '-xml'
 ])
 
-# break lines into a list
-data = out.split('\n')
+plist = readPlistFromString(out)
+mdm_vendor = parse_profile_data(plist)
 
-# setup variables
-mdm_approval = False
-mdm_installed = False
+
+#
+# this new method for finding the MDM vendor name iterates twice over the data
+# with only three assumptions: the MDM profile will have a 'com.apple.mdm' type,
+# the MDM vendor name is on the 'attribute: organization:' line, and that there
+# is only one 'attribute: organization:' line.
+# it is better than the previous method which had similar assumptions, but also
+# assumed that once it saw 'com.apple.mdm' that the previous
+# 'attribute: organization:' line was the MDM vendor name, which isn't always
+# true. at least on macOS 10.15.6 and .7 these assumptions were wrong.
+#
+# iterate through the profile data to find the payload profile type 'com.apple.mdm'
+# if this isn't found, the machine isn't enrolled in MDM
+# for line in data:
+#     if 'com.apple.mdm' in line:
+#         # found an MDM profile
+#         # this grabs the '_computerlevel' profile index to match the MDM
+#         # vendors name.
+#         mdm_index = line.split(' ')[0]
+#         break
+# 
+# # re-iterate through the profile data again now that we have the MDM profile index
+# for line in data:
+#     # this lets us only work through the MDM profile by matching it's index
+#     if mdm_index in line:
+#         # the attribute org is the MDM vendor name that we're looking for
+#         if 'attribute: organization:' in line:
+#             # 
+#             mdm_vendor = line.split('attribute: organization: ')[-1].strip()
+#             break
 
 # iterate through the profile data to search for an MDM profile and vendor
-for line in data:
-    if 'attribute: organization:' in line:
-        if '=' in line:
-            # grab MDM org based on = separator
-            org = line.split('=')[-1].strip()
-        else:
-            # grab MDM org based on : separator
-            org = line.split(':')[-1].strip()
-    if 'com.apple.mdm' in line:
-        # found an MDM profile!
-        mdm_installed = True
-        mdm_vendor = org
-        
-        if uamdm:
-            mdm_approval = check_uamdm()
-            if mdm_approval:
-                print("MDM is installed and approved.")
-            else:
-                print("MDM is installed and NOT approved.")
-        else:
-            # for pre-UAMDM macOS, a generic MDM is installed
-            print("MDM is installed.")
-        print("MDM Vendor: {0}".format(mdm_vendor))
+# for line in data:
+#     if 'attribute: organization:' in line:
+#         if '=' in line:
+#             # grab MDM org based on = separator
+#             org = line.split('=')[-1].strip()
+#         else:
+#             # grab MDM org based on : separator
+#             org = line.split(':')[-1].strip()
+#     if 'com.apple.mdm' in line:
+#         # found an MDM profile!
+#         mdm_installed = True
+#         mdm_vendor = org
+#         
+#         if uamdm:
+#             mdm_approval = check_uamdm()
+#             if mdm_approval:
+#                 print("MDM is installed and approved.")
+#             else:
+#                 print("MDM is installed and NOT approved.")
+#         else:
+#             # for pre-UAMDM macOS, a generic MDM is installed
+#             print("MDM is installed.")
+#         print("MDM Vendor: {0}".format(mdm_vendor))
 
 
-if mdm_installed:
+if mdm_vendor:
     # MDM is installed
-    if uamdm:
+    print("MDM Vendor: {0}".format(mdm_vendor))
+    if uamdm_req:
         # user approved MDM is required
-        if mdm_approval:
+        if check_uamdm():
             # MDM has been approved
+            print("MDM is installed and approved.")
             sys.exit(0)
         else:
             # MDM isn't approved
+            print("MDM is installed and NOT approved.")
             sys.exit(uamdm_warn_level)
     else:
         # user approved MDM isn't required
+        print("MDM is installed.")
         sys.exit(0)
 else:
     # MDM isn't installed
