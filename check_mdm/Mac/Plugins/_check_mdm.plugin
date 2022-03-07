@@ -131,7 +131,7 @@ mdm_vendor = parse_profile_data(plist)
 
 if mdm_vendor:
     # MDM is installed
-    print("MDM Vendor: {0}".format(mdm_vendor))
+    print(("MDM Vendor: {0}".format(mdm_vendor)))
     if uamdm_req:
         # user approved MDM is required
         if check_uamdm():
