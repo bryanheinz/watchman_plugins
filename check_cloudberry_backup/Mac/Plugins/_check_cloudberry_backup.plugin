@@ -169,8 +169,8 @@ def check_last_backup():
             if plan_type == None:
                 continue
         except Exception as e:
-            print("Unaccounted error getting session type. Please review.\n{}" \
-                .format(e))
+            print(("Unaccounted error getting session type. Please review.\n{}" \
+                .format(e)))
         # backup plan is type 1, restore is type 2.
         if plan_type == 1:
             # this session appears to be a backup session
@@ -221,10 +221,10 @@ def check_last_backup():
             pass
         elif last_backup_session[3] == 8:
             # backup error
-            print(
+            print((
                 "The last backup session exited with the error:\n\t{0}" \
                 .format(last_backup_session[4])
-            )
+            ))
         elif last_backup_session[3] == 9:
             # manually stopped
             print("The last backup session appears to have been manually stopped.")
@@ -233,29 +233,29 @@ def check_last_backup():
             print("The last backup session appears to have stopped due to system sleep.")
         else:
             # generic/unspecified error
-            print(
+            print((
                 "The last backup had an unknown error:\n\t{0}" \
                 .format(last_backup_session[4])
-            )
+            ))
     
     # if the seconds since backup are longer than the alert time, alert
     if seconds_since_backup > backup_alert_sec:
-        print(
+        print((
             "ALERT: last backup is older than {0} days. Last successful backup: {1}" \
             .format(settings['backup_alert'], backup_date_local)
-        )
+        ))
         return('alert')
     
     # if the seconds since backup are longer than the warn time, warn
     if seconds_since_backup > backup_warning_sec:
-        print(
+        print((
             "WARNING: last backup is older than {0} days. Last successful backup: {1}" \
             .format(settings['backup_warning'], backup_date_local)
-        )
+        ))
         return('warn')
     
     # if this runs, then the backups are within the warning and alert threshold
-    print("Last successful backup: {0}".format(backup_date_local))
+    print(("Last successful backup: {0}".format(backup_date_local)))
     return('ok')
 
 
