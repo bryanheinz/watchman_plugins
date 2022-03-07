@@ -20,7 +20,6 @@ try:
     from PluginToolkit import check_settings
 except ImportError:
     sys.path.append('/Library/MonitoringClient/Modules')
-    sys.path.append('/Library/MonitoringClient/Modules/Toolkit')
     from PluginToolkit import writePlist
     from PluginToolkit import check_settings
 
