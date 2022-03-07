@@ -75,7 +75,7 @@ def check_uamdm():
         '/usr/bin/profiles', 'status',
         '-type', 'enrollment'
     ])
-    
+
     if 'User Approved' in out:
         # user has approved the MDM enrollment
         return(True)

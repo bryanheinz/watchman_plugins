@@ -45,7 +45,7 @@
         <dict>
             <key>SettingStorageKey</key>
             <string>backup_alert</string>
-            <key>SettingStoragePath</key> 
+            <key>SettingStoragePath</key>
             <string>/Library/MonitoringClient/PluginSupport/_check_cloudberry_backup.plist</string>
             <key>SettingTitle</key>
             <string>Days until alerting</string>
