@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
 # tested on macOS 10.12 - 11.0.1
 # tested with the following MDMs: Meraki, SimpleMDM
