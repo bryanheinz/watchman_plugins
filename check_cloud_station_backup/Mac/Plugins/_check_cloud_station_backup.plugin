@@ -55,11 +55,11 @@ if time_diff.days >= 7:
     sys.exit(2)
 # if the backup is older than 3 days, take note
 elif time_diff.days >= 3:
-    print("Last backup is older than 3 days: {0}".format(last_backup))
+    print(("Last backup is older than 3 days: {0}".format(last_backup)))
     db.close()
     sys.exit(20)
 
 # everything looks good, backup is fresh
-print("Last backup: {0}".format(last_backup))
+print(("Last backup: {0}".format(last_backup)))
 db.close()
 sys.exit(0)
