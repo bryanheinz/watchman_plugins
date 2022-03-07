@@ -8,7 +8,7 @@ from datetime import datetime
 
 # exit if Cloud Station Backup isn't installed
 if not os.path.isdir('/Applications/Synology Cloud Station Backup.app'):
-    print("Synoloy Cloud Station Backup isn't installed.")
+    print("Synology Cloud Station Backup is not installed.")
     sys.exit(0)
 
 
