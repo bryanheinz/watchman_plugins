@@ -10,5 +10,7 @@
 	<array>
 		<string>_check_cloud_station_backup.plugin</string>
 	</array>
+	<key>PluginVersion</key>
+	<string>1.1</string>
 </dict>
 </plist>

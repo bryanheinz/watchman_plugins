@@ -52,7 +52,7 @@
         </dict>
     </array>
     <key>PluginVersion</key>
-    <string>2.0</string>
+    <string>2.1</string>
     <key>ProgramArguments</key>
     <array>
         <string>/Library/MonitoringClient/Plugins/_check_mdm.plugin</string>
