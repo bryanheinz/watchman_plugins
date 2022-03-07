@@ -16,8 +16,8 @@ from xml.etree import ElementTree as et
 # workaround testing vs. production; still requires WM to be installed,
 # but allows for it to be manually run by directly calling Python.
 try:
-    from PluginToolkit import writePlist
-    from PluginToolkit import check_settings
+    from Toolkit.plist_handler import writePlist
+    from Toolkit.settings_handler import check_settings
 except ImportError:
     sys.path.append('/Library/MonitoringClient/Modules')
     from PluginToolkit import writePlist
