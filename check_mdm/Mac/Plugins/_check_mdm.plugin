@@ -126,7 +126,7 @@ out, err = termy([
     'system_profiler', 'SPConfigurationProfileDataType', '-xml'
 ])
 
-plist = readPlistFromString(out)
+plist = readPlistFromString(out.decode())
 mdm_vendor = parse_profile_data(plist)
 
 if mdm_vendor:
