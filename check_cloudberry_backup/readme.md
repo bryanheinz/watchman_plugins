@@ -1,7 +1,7 @@
 # Check CloudBerry Backup
 This **[Watchman Monitoring](https://www.watchmanmonitoring.com)** plugin checks if CloudBerry Backup for Mac (CBB) is installed, Licensed, and will warn or alert if the last backup is older than 3 days (default.)
 
-This monitor has been tested and should be compatible with CloudBerry Backup for macOS v2.8 - v3.0.2.
+This monitor has been tested and should be compatible with CloudBerry Backup for macOS v2.8 - v3.2
 
 _\_check\_cloudberry\_backup.plist_ is a plist file to define the plugin for Watchman Monitoring. It contains optional settings to configure how the plugin will alert Watchman Monitoring.
 
