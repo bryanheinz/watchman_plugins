@@ -96,7 +96,7 @@ def check_license():
             # this error happens if LicenseKey isn't a key. typically this means
             # that CBB is running a trial.
             pass
-
+        
         if key is None:
             # couldn't retrieve a license key.
             print("CloudBerry Backup not licensed.")
@@ -109,7 +109,7 @@ def check_last_backup():
     # the most accurate way to get the backup time will be to get the last
     # backed up item in the session_history table, check the result code, and
     # then pull the date_start_utc value for the session row.
-
+    
     # copy the DB and it's temp files to a temporary location to safely read from
     og_db_path = os.path.join(cbb_root, 'config/cbbackup.db')
     og_db_shm_path = os.path.join(cbb_root, 'config/cbbackup.db-shm')
@@ -130,9 +130,9 @@ def check_last_backup():
         shutil.copyfile(og_db_shm_path, '/tmp/cbb-db-tmp/cbbackup.db-shm')
     if os.path.isfile(og_db_wal_path):
         shutil.copyfile(og_db_wal_path, '/tmp/cbb-db-tmp/cbbackup.db-wal')
-
+    
     db_path = '/tmp/cbb-db-tmp/cbbackup.db'
-
+    
     try:
         # connect to the DB
         db = sqlite3.connect(db_path)
@@ -140,19 +140,19 @@ def check_last_backup():
         # alert if this connection fails
         print("Cloudn't open CloudBerry Backup DB.")
         return 'alert'
-
+    
     # get last 5000 session_history items
     session_history = db.execute(
         # "select id,plan_id from session_history where id = (select max(id) from session_history);"
         "select id,plan_id,date_start_utc,result,error_message from session_history order by id desc limit 5000;"
     ).fetchall()
-
+    
     if len(session_history) == 0:
         # there isn't any session history. either there's a problem with the DB or, more likely,
         # CBB has never been run before on this machine.
         print("It appears that CloudBerry Backup has never run.")
         return "warn"
-
+    
     # setup last backup session variable
     last_backup_session = ""
     # setup last successful backup session variable
@@ -182,19 +182,19 @@ def check_last_backup():
             if session[3] == 6: # checks if the session was successful
                 last_successful_session = session
                 break
-
+    
     db.close()
     shutil.rmtree('/tmp/cbb-db-tmp')
-
+    
     if last_backup_session == "":
         print("Couldn't find a backup session. It doesn't appear that CloudBerry Backup has run before on this machine.")
         return "warn"
-
+    
     # check if there has ever been a successful backup session
     if last_successful_session == "":
         print("No successful backup sessions have ever run.")
         return "warn"
-
+    
     # get last successful start time as a string
     session_start = str(last_successful_session[2])
     # convert session_start time into UTC epoch time.
@@ -203,12 +203,12 @@ def check_last_backup():
     # convert epoch time to a local date/time string
     backup_date_local = datetime.datetime.fromtimestamp(backup_epoch_utc) \
         .strftime('%Y-%m-%d %H:%M:%S')
-
+    
     # get current epoch time
     current_epoch_time = int(time.time())
     # get the seconds between now and the last backup session
     seconds_since_backup = current_epoch_time - backup_epoch_utc
-
+    
     # check if the last backup was successful or not
     if last_backup_session != last_successful_session:
         # last backup session wasn't successful for whatever reason
@@ -237,7 +237,7 @@ def check_last_backup():
                 "The last backup had an unknown error:\n\t{0}" \
                 .format(last_backup_session[4])
             )
-
+    
     # if the seconds since backup are longer than the alert time, alert
     if seconds_since_backup > backup_alert_sec:
         print(
@@ -245,7 +245,7 @@ def check_last_backup():
             .format(settings['backup_alert'], backup_date_local)
         )
         return 'alert'
-
+    
     # if the seconds since backup are longer than the warn time, warn
     if seconds_since_backup > backup_warning_sec:
         print(
@@ -253,7 +253,7 @@ def check_last_backup():
             .format(settings['backup_warning'], backup_date_local)
         )
         return 'warn'
-
+    
     # if this runs, then the backups are within the warning and alert threshold
     print("Last successful backup: {0}".format(backup_date_local))
     return 'ok'
