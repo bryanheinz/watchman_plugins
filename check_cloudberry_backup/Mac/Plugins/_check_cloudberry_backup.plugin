@@ -1,7 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 #
-# version: 1.4.3
+# version: 1.5.0
+# requires Watchman v7
 #
 
 import os
@@ -16,13 +17,12 @@ from xml.etree import ElementTree as et
 # workaround testing vs. production; still requires WM to be installed,
 # but allows for it to be manually run by directly calling Python.
 try:
-    from PluginToolkit import writePlist
-    from PluginToolkit import check_settings
+    from Toolkit.plist_handler import writePlist
+    from Toolkit.settings_handler import check_settings
 except ImportError:
     sys.path.append('/Library/MonitoringClient/Modules')
-    sys.path.append('/Library/MonitoringClient/Modules/Toolkit')
-    from PluginToolkit import writePlist
-    from PluginToolkit import check_settings
+    from Toolkit.plist_handler import writePlist
+    from Toolkit.settings_handler import check_settings
 
 
 # CloudBerry Backup root config folder
@@ -70,18 +70,18 @@ def check_install():
     # check if CloudBerry Backup isn't installed
     if os.path.exists('/Applications/CloudBerry Backup.app'):
         # CBB is installed.
-        return(True)
+        return True
     else:
         # CBB isn't installed
         print("CloudBerry Backup isn't installed.")
-        return(False)
+        return False
 
 def check_license():
     cbb_license = os.path.join(cbb_root, 'config/.License')
     if not os.path.exists(cbb_license):
         # CBB license file doesn't even exist. so, it can't be licensed.
         print("CloudBerry Backup not licensed")
-        return(False)
+        return False
     else:
         # license file is an XML doc, parse it for the key.
         # if not licensed, it's an empty file.
@@ -98,13 +98,13 @@ def check_license():
             # that CBB is running a trial.
             pass
         
-        if key == None:
+        if key is None:
             # couldn't retrieve a license key.
             print("CloudBerry Backup not licensed.")
-            return(False)
+            return False
         else:
             # CBB is licensed
-            return(True)
+            return True
 
 def check_last_backup():
     # the most accurate way to get the backup time will be to get the last
@@ -118,7 +118,7 @@ def check_last_backup():
     if not os.path.exists(og_db_path):
         # check if the DB path even exists.
         print("CloudBerry Backup DB doesn't exist. Can't check last backup.")
-        return('alert')
+        return 'alert'
     else:
         try:
             # create a temp directory to read the DB from
@@ -140,7 +140,7 @@ def check_last_backup():
     except:
         # alert if this connection fails
         print("Cloudn't open CloudBerry Backup DB.")
-        return('alert')
+        return 'alert'
     
     # get last 5000 session_history items
     session_history = db.execute(
@@ -152,7 +152,7 @@ def check_last_backup():
         # there isn't any session history. either there's a problem with the DB or, more likely,
         # CBB has never been run before on this machine.
         print("It appears that CloudBerry Backup has never run.")
-        return("warn")
+        return "warn"
     
     # setup last backup session variable
     last_backup_session = ""
@@ -167,7 +167,7 @@ def check_last_backup():
             ).fetchone()[0]
         except TypeError:
             # the log didn't return a plan type
-            if plan_type == None:
+            if plan_type is None:
                 continue
         except Exception as e:
             print("Unaccounted error getting session type. Please review.\n{}" \
@@ -189,12 +189,12 @@ def check_last_backup():
     
     if last_backup_session == "":
         print("Couldn't find a backup session. It doesn't appear that CloudBerry Backup has run before on this machine.")
-        return("warn")
+        return "warn"
     
     # check if there has ever been a successful backup session
     if last_successful_session == "":
         print("No successful backup sessions have ever run.")
-        return("warn")
+        return "warn"
     
     # get last successful start time as a string
     session_start = str(last_successful_session[2])
@@ -245,7 +245,7 @@ def check_last_backup():
             "ALERT: last backup is older than {0} days. Last successful backup: {1}" \
             .format(settings['backup_alert'], backup_date_local)
         )
-        return('alert')
+        return 'alert'
     
     # if the seconds since backup are longer than the warn time, warn
     if seconds_since_backup > backup_warning_sec:
@@ -253,11 +253,11 @@ def check_last_backup():
             "WARNING: last backup is older than {0} days. Last successful backup: {1}" \
             .format(settings['backup_warning'], backup_date_local)
         )
-        return('warn')
+        return 'warn'
     
     # if this runs, then the backups are within the warning and alert threshold
     print("Last successful backup: {0}".format(backup_date_local))
-    return('ok')
+    return 'ok'
 
 
 is_installed = check_install()

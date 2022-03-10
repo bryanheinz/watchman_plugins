@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
+
 import os
 import sys
 import sqlite3
@@ -8,7 +9,7 @@ from datetime import datetime
 
 # exit if Cloud Station Backup isn't installed
 if not os.path.isdir('/Applications/Synology Cloud Station Backup.app'):
-    print("Synoloy Cloud Station Backup isn't installed.")
+    print("Synology Cloud Station Backup is not installed.")
     sys.exit(0)
 
 
@@ -55,11 +56,11 @@ if time_diff.days >= 7:
     sys.exit(2)
 # if the backup is older than 3 days, take note
 elif time_diff.days >= 3:
-    print("Last backup is older than 3 days: {0}".format(last_backup))
+    print(("Last backup is older than 3 days: {0}".format(last_backup)))
     db.close()
     sys.exit(20)
 
 # everything looks good, backup is fresh
-print("Last backup: {0}".format(last_backup))
+print(("Last backup: {0}".format(last_backup)))
 db.close()
 sys.exit(0)

@@ -1,6 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
+
 #
-# tested on macOS 10.12 - 11.0.1
+# version: 2.1.0
+# requires Watchman v7
+# tested on macOS 10.12 - 12.2.1
 # tested with the following MDMs: Meraki, SimpleMDM
 #
 
@@ -14,15 +17,14 @@ from distutils.version import LooseVersion
 # workaround testing vs. production; still requires WM to be installed,
 # but allows for it to be manually run by directly calling Python.
 try:
-    from PluginToolkit import writePlist
-    from PluginToolkit import check_settings
-    from PluginToolkit import readPlistFromString
+    from Toolkit.plist_handler import writePlist
+    from Toolkit.settings_handler import check_settings
+    from Toolkit.plist_handler import readPlistFromString
 except ImportError:
     sys.path.append('/Library/MonitoringClient/Modules')
-    sys.path.append('/Library/MonitoringClient/Modules/Toolkit')
-    from PluginToolkit import writePlist
-    from PluginToolkit import check_settings
-    from PluginToolkit import readPlistFromString
+    from Toolkit.plist_handler import writePlist
+    from Toolkit.settings_handler import check_settings
+    from Toolkit.plist_handler import readPlistFromString
 
 
 # read preferences to know how to alert if there's a problem
@@ -66,7 +68,7 @@ uamdm_req = LooseVersion(mac_os) >= LooseVersion('10.13.4')
 def termy(cmd):
     task = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = task.communicate()
-    return(out, err)
+    return out.decode(), err.decode()
 
 def check_uamdm():
     # only works on 10.13.4+
@@ -78,10 +80,10 @@ def check_uamdm():
     
     if 'User Approved' in out:
         # user has approved the MDM enrollment
-        return(True)
+        return True
     else:
         # user has not approved the MDM enrollment
-        return(False)
+        return False
 
 def parse_profile_data(plist):
     # long loop through the system_profile plist to find the MDM vendor name
@@ -97,7 +99,7 @@ def parse_profile_data(plist):
                             for iv in iii_items:
                                 mdm_vendor = get_vendor_name(iv)
                                 if mdm_vendor:
-                                    return(mdm_vendor)
+                                    return mdm_vendor
 
 def get_vendor_name(iv):
     # parse the last bit of the system_profile plist for the MDM vendor name
@@ -105,7 +107,7 @@ def get_vendor_name(iv):
     if iv_item == 'com.apple.mdm':
         mdm_vendor = iv.get('spconfigprofile_organization')
         if mdm_vendor:
-            return(mdm_vendor.strip())
+            return mdm_vendor.strip()
 
 
 #
