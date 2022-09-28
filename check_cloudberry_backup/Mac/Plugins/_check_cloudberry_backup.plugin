@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# version: 1.5.0
+# version: 1.5.1
 # requires Watchman v7
 #
 
@@ -159,6 +159,7 @@ def check_last_backup():
     # setup last successful backup session variable
     last_successful_session = ""
     # loop through sessions checking if it's a backup plan and if it was successful
+    plan_type = None
     for session in session_history:
         # get the plan type for this sessions's plan_id
         try:
